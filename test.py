@@ -5,6 +5,12 @@ from scapy.all import *
 mac_A = "1c:75:08:3c:c5:57"
 mac_RasPi = "dc:a6:32:aa:22:9d"
 
+# finds a packet with ip_src ip_dst sent to mac_src
+def find_pkt(mac_src, ip_src, ip_dst, pcap):
+   for pkt in pcap:
+      if(pkt.src == mac_src and pkt[IP].src == ip_src and pkt[IP].dst == ip_dst):
+         return pkt
+
 def avg_delta_echopkts(pcap):
    time_sum = 0.0
    t_start = t_end = 0.0
@@ -26,7 +32,19 @@ def avg_delta_echopkts(pcap):
    return time_sum/n, n/(t_end-t_start)
 
 def avg_rtt(pcap):
-   for(pcap)
+   rtt_sum = 0.0
+   n = 0
+   for pkt in pcap:
+      if (pkt.dst == mac_A or pkt.dst == mac_RasPi):
+         continue
+      pkt_echo = find_pkt(mac_A,pkt[IP].src,pkt[IP].dst, pcap)
+      if (pkt_echo == None):
+         pkt_echo = find_pkt(mac_RasPi,pkt[IP].src,pkt[IP].dst, pcap)
+      
+      rtt_sum += pkt_echo.time - pkt.time
+      n += 1
+   return rtt_sum/n
+
 
 def read_pcaps():
    import os
