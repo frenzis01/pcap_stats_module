@@ -48,31 +48,8 @@ def avg_rtt(pcap):
    return rtt_sum/n
 
 
-def read_pcaps(path):
-   import os
-   import sys
-   import fnmatch
-
-   pcap_files = []
-   pcap_paths = []
-   for path,dirs,files in os.walk(path):
-      for f in fnmatch.filter(files,'*.pcap'):
-         fullname = os.path.abspath(os.path.join(path,f))
-         pcap_paths.append(fullname)
-   
-   pcap_paths.sort()
-   # print(*pcap_paths, sep='\n')
-   for path in pcap_paths:
-      print(path, " Reading...")
-      pcap_files.append(rdpcap(path))
-      sys.stdout.write("\033[F")
-      sys.stdout.write("\033[K")
-      print(path[path.rfind("/",0,path.rfind("/"))+1:], " DONE")
-      pcap_files[-1].listname = path[path.rfind("/",0,path.rfind("/"))+1:]
-   return pcap_files
 
 import json
-import decimal
 
 def get_paths(path):
    import os
@@ -115,7 +92,7 @@ def write_pcaps_stats(pcap_paths, json_path):
       x = (avg_delta_pkts(pcap,True))
       y = (avg_delta_pkts(pcap,False))
       rtt = avg_rtt(pcap)
-      stats.append(pcap_stats(pcap.listname,str(x[0]),str(x[1]),str(y[1]),rtt))
+      stats.append(pcap_stats(pcap.listname,str(x[0]),str(x[1]),str(y[1]),str(rtt)))
       print(stats[-1].toJSON())
    print(json.dumps(stats,default=lambda o: o.toJSON(), indent=4))
    f = open(json_path, "w")
