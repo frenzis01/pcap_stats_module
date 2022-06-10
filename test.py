@@ -5,10 +5,10 @@ from scapy.all import *
 mac_A = "1c:75:08:3c:c5:57"
 mac_RasPi = "dc:a6:32:aa:22:9d"
 
-# finds a packet with ip_src ip_dst sent to mac_src
-def find_pkt(mac_src, ip_src, ip_dst, pcap):
+# finds a packet with ip_src ip_dst sent to mac_dst
+def find_pkt(mac_dst, ip_src, ip_dst, pcap):
    for pkt in pcap:
-      if(pkt.src == mac_src and pkt[IP].src == ip_src and pkt[IP].dst == ip_dst):
+      if(pkt.dst == mac_dst and pkt[IP].src == ip_src and pkt[IP].dst == ip_dst):
          return pkt
 
 def avg_delta_pkts(pcap, echo):
@@ -61,14 +61,14 @@ def get_paths(path):
          fullname = os.path.abspath(os.path.join(path,f))
          pcap_paths.append(fullname)
    
-   pcap_paths.sort()
+   pcap_paths.sort(reverse=False)
    return pcap_paths
 
 def read_pcap(path):
    print(path, " Reading...")
    ret = rdpcap(path)
-   sys.stdout.write("\033[F")
-   sys.stdout.write("\033[K")
+   # sys.stdout.write("\033[F")
+   # sys.stdout.write("\033[K")
    print(path[path.rfind("/",0,path.rfind("/"))+1:], " DONE")
    ret.listname = path[path.rfind("/",0,path.rfind("/"))+1:]
    return ret
