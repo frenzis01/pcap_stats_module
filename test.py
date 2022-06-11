@@ -1,17 +1,20 @@
 from turtle import end_fill
+from more_itertools import last
 import scapy.all
 from scapy.all import *
 
 mac_A = "1c:75:08:3c:c5:57"
 mac_RasPi = "dc:a6:32:aa:22:9d"
+mac_l = [mac_A,mac_RasPi]
 
 # finds a packet with ip_src ip_dst sent to mac_dst
 def find_pkt(mac_dst_list, ip_src, ip_dst, pcap, start_index):
-   i = start_index -1
+   last_index = -1
    for pkt in pcap[start_index:]:
-      i += 1
+      last_index += 1
       if(pkt.dst in mac_dst_list and pkt[IP].src == ip_src and pkt[IP].dst == ip_dst):
-         return pkt,i
+         return pkt,last_index
+   return None, -1
 
 def avg_delta_pkts(pcap, echo):
    time_sum = 0.0
@@ -38,14 +41,26 @@ def avg_delta_pkts(pcap, echo):
 def avg_rtt(pcap):
    rtt_sum = 0.0
    n = 0
-   last_index = 0
+   pkt_index = -1
+   last_echo_index = 0
    for pkt in pcap:
+      pkt_index += 1
       if (pkt.dst == mac_A or pkt.dst == mac_RasPi):
          continue
-      pkt_echo, last_index = find_pkt([mac_A,mac_RasPi],pkt[IP].src,pkt[IP].dst, pcap, last_index)
-      
-      rtt_sum += pkt_echo.time - pkt.time
-      n += 1
+      try:
+         pkt_echo, last_echo_index = find_pkt(mac_l,pkt[IP].src,pkt[IP].dst, pcap, last_echo_index)
+         if (last_echo_index == -1):
+            pkt_echo, last_echo_index = find_pkt(mac_l,pkt[IP].src,pkt[IP].dst, pcap, pkt_index)
+      except Exception as e:
+         print(traceback.format_exc())
+         print(pkt.summary(), "\n", pkt_echo.summary(), "\n index ->", pkt_index)
+         print("pkt-> ,",pkt[IP].src,pkt[IP].dst)
+         print("pkt_echo-> ,",pkt_echo[IP].src,pkt_echo[IP].dst)
+         print(pcap.listname)
+         
+      if (pkt_echo != None): # should never enter this
+         rtt_sum += pkt_echo.time - pkt.time
+         n += 1
    return rtt_sum/n
 
 
