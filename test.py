@@ -73,7 +73,19 @@ def avg_rtt(pcap):
       i += 2
    return rtt_sum/n
 
-
+def variance(pcap, avg_delta): 
+   pkt_prev = pcap[0]
+   sum=0
+   n=0
+   for pkt in pcap:
+      if (pkt.dst != mac_A and pkt.dst != mac_RasPi): # only pkts B->A
+         continue
+      if (n != 0):
+         delta = pkt.time - pkt_prev.time
+         sum += math.pow(delta - avg_delta,2)
+      pkt_prev = pkt
+      n+=1
+   return sum/(n-1)
 
 
 # find all pcap files in the given path
@@ -103,11 +115,12 @@ def read_pcap(path):
 
 # simple class to avoid using a tuple
 class pcap_stats:
-   def __init__(self, name, avg_time, ppsB, ppsA, rtt):
+   def __init__(self, name, avg_time, ppsB, ppsA,var, rtt):
       self.name = name
       self.avg_time = avg_time
       self.ppsB = ppsB
       self.ppsA = ppsA
+      self.var = var
       self.rtt = rtt
    
    def toJSON(self):
@@ -120,8 +133,9 @@ def write_pcaps_stats(pcap_paths, json_path):
       print(pcap.listname, "size -> ", len(pcap))
       a_b = (avg_delta_pkts(pcap,True))
       b_a = (avg_delta_pkts(pcap,False))
+      var = variance(pcap,a_b[0])
       rtt = avg_rtt(pcap) # this must be the last, it sorts pcap!
-      stats.append(pcap_stats(pcap.listname,str(a_b[0]),str(a_b[1]),str(b_a[1]),str(rtt)))
+      stats.append(pcap_stats(pcap.listname,str(a_b[0]),str(a_b[1]),str(b_a[1]),str(var),str(rtt)))
       print(stats[-1].toJSON())
    
    # print the result on stdout and then write to file
