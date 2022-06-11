@@ -35,26 +35,37 @@ def avg_delta_pkts(pcap, echo):
       pkt_prev = pkt
       n += 1
    
-   print(pcap.listname, time_sum, n,t_end, t_start )
+   # print(pcap.listname, time_sum, n,t_end, t_start )
    return time_sum/n, n/(t_end-t_start)
 
 def ip_tuple(pkt):
    if IP in pkt:
       return pkt[IP].src,pkt[IP].dst
-   return '',''
+   return '',''   #should never enter this. Must call clean_pcap first
 
 def avg_rtt(pcap):
    rtt_sum = 0.0
    n = 0
+   i = 0
    pcap = sorted(pcap, key=ip_tuple)
-   for pkt in pcap[:-1:2]:
-      sys.stdout.write("\033[F")
-      sys.stdout.write("\033[K")
-      print(n, "Searching for : ", pkt.summary())
-      pkt_echo = pcap[n*2 + 1]
-      
+   while i < len(pcap)-1:
+      pkt = pcap[i]
+      if IP not in pkt:
+         print("Skipping packet: ", pkt.summary())
+         i += 1
+         continue
+      pkt_echo = pcap[i + 1]
+      if (IP not in pkt_echo or pkt[IP].src != pkt_echo[IP].src or pkt[IP].dst != pkt_echo[IP].dst ):
+         print("Something went wrong! Skipping packet echo: ", pkt_echo.summary())
+         i+=1
+         continue
+
       rtt_sum += pkt_echo.time - pkt.time
       n += 1
+      i += 2
+      # sys.stdout.write("\033[F")
+      # sys.stdout.write("\033[K")
+      # print(n, "Searching for : ", pkt.summary())
    return rtt_sum/n
 
 
@@ -103,6 +114,7 @@ def write_pcaps_stats(pcap_paths, json_path):
    stats  = []
    for path in pcap_paths:
       pcap = read_pcap(path)
+      print(pcap.listname, "size -> ", len(pcap))
       x = (avg_delta_pkts(pcap,True))
       y = (avg_delta_pkts(pcap,False))
       rtt = avg_rtt(pcap)
