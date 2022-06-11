@@ -38,35 +38,30 @@ def avg_delta_pkts(pcap, echo):
    print(pcap.listname, time_sum, n,t_end, t_start )
    return time_sum/n, n/(t_end-t_start)
 
+def ip_tuple(pkt):
+   if IP in pkt:
+      return pkt[IP].src,pkt[IP].dst
+   return '',''
+
 def avg_rtt(pcap):
    rtt_sum = 0.0
    n = 0
-   pkt_index = -1
-   last_echo_index = 0
-   for pkt in pcap:
-      pkt_index += 1
-      if (pkt.dst == mac_A or pkt.dst == mac_RasPi):
-         continue
-      try:
-         sys.stdout.write("\033[F")
-         sys.stdout.write("\033[K")
-         print("Searching for : ", pkt.summary())
-         pkt_echo, last_echo_index = find_pkt(mac_l,pkt[IP].src,pkt[IP].dst, pcap, last_echo_index)
-         if (last_echo_index == -1):
-            pkt_echo, last_echo_index = find_pkt(mac_l,pkt[IP].src,pkt[IP].dst, pcap, pkt_index)
-      except Exception as e:
-         print(traceback.format_exc())
-         print(pkt.summary(), "\n", pkt_echo.summary(), "\n index ->", pkt_index)
-         print("pkt-> ,",pkt[IP].src,pkt[IP].dst)
-         print("pkt_echo-> ,",pkt_echo[IP].src,pkt_echo[IP].dst)
-         print(pcap.listname)
-         
-      if (pkt_echo != None): # should never enter this
-         rtt_sum += pkt_echo.time - pkt.time
-         n += 1
+   pcap = sorted(pcap, key=ip_tuple)
+   for pkt in pcap[:-1:2]:
+      sys.stdout.write("\033[F")
+      sys.stdout.write("\033[K")
+      print(n, "Searching for : ", pkt.summary())
+      pkt_echo = pcap[n*2 + 1]
+      
+      rtt_sum += pkt_echo.time - pkt.time
+      n += 1
    return rtt_sum/n
 
 
+def sort_pcap(pcap):
+   pcap = sorted(pcap, key=ip_tuple)
+   for pkt in pcap[500:550]:
+      print(pkt.summary())
 
 import json
 
