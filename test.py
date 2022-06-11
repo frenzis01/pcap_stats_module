@@ -48,6 +48,9 @@ def avg_rtt(pcap):
       if (pkt.dst == mac_A or pkt.dst == mac_RasPi):
          continue
       try:
+         sys.stdout.write("\033[F")
+         sys.stdout.write("\033[K")
+         print("Searching for : ", pkt.summary())
          pkt_echo, last_echo_index = find_pkt(mac_l,pkt[IP].src,pkt[IP].dst, pcap, last_echo_index)
          if (last_echo_index == -1):
             pkt_echo, last_echo_index = find_pkt(mac_l,pkt[IP].src,pkt[IP].dst, pcap, pkt_index)
