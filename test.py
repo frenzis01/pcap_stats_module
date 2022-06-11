@@ -6,10 +6,12 @@ mac_A = "1c:75:08:3c:c5:57"
 mac_RasPi = "dc:a6:32:aa:22:9d"
 
 # finds a packet with ip_src ip_dst sent to mac_dst
-def find_pkt(mac_dst, ip_src, ip_dst, pcap):
-   for pkt in pcap:
-      if(pkt.dst == mac_dst and pkt[IP].src == ip_src and pkt[IP].dst == ip_dst):
-         return pkt
+def find_pkt(mac_dst_list, ip_src, ip_dst, pcap, start_index):
+   i = start_index -1
+   for pkt in pcap[start_index:]:
+      i += 1
+      if(pkt.dst in mac_dst_list and pkt[IP].src == ip_src and pkt[IP].dst == ip_dst):
+         return pkt,i
 
 def avg_delta_pkts(pcap, echo):
    time_sum = 0.0
@@ -36,12 +38,11 @@ def avg_delta_pkts(pcap, echo):
 def avg_rtt(pcap):
    rtt_sum = 0.0
    n = 0
+   last_index = 0
    for pkt in pcap:
       if (pkt.dst == mac_A or pkt.dst == mac_RasPi):
          continue
-      pkt_echo = find_pkt(mac_A,pkt[IP].src,pkt[IP].dst, pcap)
-      if (pkt_echo == None):
-         pkt_echo = find_pkt(mac_RasPi,pkt[IP].src,pkt[IP].dst, pcap)
+      pkt_echo, last_index = find_pkt([mac_A,mac_RasPi],pkt[IP].src,pkt[IP].dst, pcap, last_index)
       
       rtt_sum += pkt_echo.time - pkt.time
       n += 1
